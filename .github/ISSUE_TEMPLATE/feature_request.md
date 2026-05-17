@@ -1,4 +1,4 @@
-l---
+---
 name: Feature Request
 about: Suggest an improvement for the documentation
 labels: enhancement, documentation
@@ -12,7 +12,6 @@ labels: enhancement, documentation
 ## Why is this useful?
 
 <!-- Explain the problem this solves -->
-
 
 
 ## Related Page

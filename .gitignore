@@ -1,0 +1,28 @@
+# macOS
+.DS_Store
+
+# Node
+node_modules
+
+# Logs
+*.log
+
+# Environment files
+.env
+.env.local
+
+# Build output
+dist
+build
+.next
+
+# Cache
+.cache
+.temp
+
+# Editor
+.vscode
+.idea
+
+# Generated files
+generated/

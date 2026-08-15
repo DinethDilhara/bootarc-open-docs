@@ -1,0 +1,727 @@
+---
+title: "Integrating url2ProductAI with Spring Boot Backend: A Practical Integration Guide"
+description: "A practical guide to integrating url2ProductAI into a Spring Boot application to extract structured product data from URLs using Jsoup, Spring AI, and OpenAI."
+date: 14-08-2026
+authors:
+  - avatar: "https://ik.imagekit.io/dinimgbucket/bootarc/blog/dineth.png"
+    handle: DinethDilhara
+    username: Dineth Dilhara
+    handleUrl: "https://github.com/DinethDilhara"
+cover: "https://ik.imagekit.io/dinimgbucket/bootarc/blog/b2-u2pai/url2Product-blog-header.jpeg"
+---
+
+## Introduction
+
+If you need to extract product information from a webpage, handling every website separately can quickly become difficult.
+
+<Split>
+  <SplitTwo>
+
+    So yeah... web scraping.
+    Or as we like to call it: **web testing**. 😅
+
+    Every website has its own HTML structure, layouts, price formats, and little surprises.
+
+    What works perfectly on one website can completely break on another. Before you know it, you're writing custom scraping logic for every website you want to support.
+
+  </SplitTwo>
+
+  <SplitThree>
+    <Media
+      type="image"
+      src="https://ik.imagekit.io/dinimgbucket/bootarc/blog/b2-u2pai/web-scarping-meme.jpeg?updatedAt=1786691696576"
+    />
+  </SplitThree>
+</Split>
+
+`url2product-ai` provides a Spring Boot service that takes a product URL and returns structured product information such as the title, description, price, currency, images, and extraction status.
+
+This guide shows you how to integrate it into your own Spring Boot backend and customize the parts you need for your use case.
+
+## 1. What You Are Integrating
+
+Before jumping into the setup, let's quickly look at what we are actually adding to our backend.
+
+`url2product-ai` is a Spring Boot service that takes a product URL and turns the webpage into structured product information. The service handles the scraping and extraction process and gives you product data that you can use directly in your application.
+
+<Image
+  src="https://ik.imagekit.io/dinimgbucket/bootarc/blog/b2-u2pai/url2product-ai-flow.png?updatedAt=1786720266373"
+  alt="System Design Challenge"
+  width={700}
+  height={400}
+/>
+
+You can also customize different parts of the service depending on your needs, such as webpage fetching, HTML cleaning, the LLM prompt, product fields, currency provider, and extraction rules.
+
+We'll start with the default setup first and look at customization later.
+
+## 2. Prerequisites
+
+Before integrating `url2product-ai`, there are a few things you need to have ready.
+
+### OpenAI API Key
+
+If you are using the default LLM extraction setup, you need an **OpenAI API key**.
+
+The service uses Spring AI to communicate with OpenAI during product extraction.
+
+Keep your API key in an environment variable or your application's secure configuration rather than committing it to your repository.
+
+### Spring Boot Project
+
+You should already have a Spring Boot backend where you want to integrate the service.
+
+That's it for the basic setup. The next step is adding `url2product-ai` to your project and connecting it to your application.
+
+## 3. Add url2product-ai to Your Project
+
+Now let's add `url2product-ai` to the Spring Boot project.
+
+<Stepper>
+
+<StepperItem title="Step 1: Add the Maven Dependency">
+
+Open your `pom.xml` and add the `url2product-ai` dependency:
+
+```
+<dependency>
+    <groupId>com.dineth</groupId>
+    <artifactId>url2product-ai</artifactId>
+    <version>YOUR_VERSION</version>
+</dependency>
+```
+
+Use the version you want to integrate with your project.
+
+</StepperItem>
+
+<StepperItem title="Step 2: Reload Maven">
+
+After adding the dependency, reload your Maven project or run:
+
+```
+mvn clean install
+```
+
+Maven will download the dependency and make the service available to your Spring Boot application.
+
+</StepperItem>
+
+</Stepper>
+
+## 4. Configure OpenAI
+
+`url2product-ai` uses Spring AI with OpenAI for the product extraction step, so the next thing we need is an OpenAI API key.
+
+<Stepper>
+
+<StepperItem title="Step 1: Add Your OpenAI API Key">
+
+Set your OpenAI API key as an environment variable:
+
+```
+OPENAI_API_KEY=your-api-key
+```
+
+Avoid committing the actual API key to your repository.
+
+</StepperItem>
+
+<StepperItem title="Step 2: Configure application.properties">
+
+Since this project uses `application.properties`, add the following:
+
+```
+spring.ai.openai.api-key=${OPENAI_API_KEY}
+```
+
+The application will read the API key from the environment variable when it starts.
+
+</StepperItem>
+
+<StepperItem title="Step 3: Select the OpenAI Model">
+
+You can also choose which OpenAI model should be used for product extraction.
+
+Add the model to your `application.properties`:
+
+```
+spring.ai.openai.chat.options.model=YOUR_MODEL
+```
+
+For example:
+
+```
+spring.ai.openai.chat.options.model=gpt-4o-mini
+```
+
+Choose the model based on your application's requirements for extraction quality, speed, and cost.
+
+</StepperItem>
+
+<StepperItem title="Step 4: Start Your Application">
+
+Start your Spring Boot application normally:
+
+```
+mvn spring-boot:run
+```
+
+If the application starts successfully, the OpenAI configuration is ready.
+
+</StepperItem>
+
+</Stepper>
+
+## 5. Your First Product Extraction
+
+Now that the dependency and OpenAI configuration are ready, let's make the first product extraction request.
+
+The service exposes the following endpoint:
+
+```
+POST /api/v1/product-request/extract
+```
+
+The request only needs a product URL:
+
+```
+{
+  "url": "https://example.com/product"
+}
+```
+
+You can test it with tools like Postman, Insomnia, or `curl`.
+
+<Stepper>
+
+<StepperItem title="Step 1: Send the Request">
+
+For example, using `curl`:
+
+```
+curl -X POST http://localhost:8080/api/v1/product-request/extract \
+  -H "Content-Type: application/json" \
+  -d '{
+    "url": "https://example.com/product"
+  }'
+```
+
+Replace the URL with a product page you want to extract.
+
+</StepperItem>
+
+<StepperItem title="Step 2: Check the Response">
+
+If the extraction is successful, the API returns the product information inside the `data` field.
+
+```
+{
+  "success": true,
+  "message": "Product extracted successfully",
+  "data": {
+    "link": "https://example.com/product",
+    "title": "Example Product",
+    "description": "Product description",
+    "currency": "USD",
+    "price": 99.99,
+    "images": [
+      "https://example.com/product.jpg"
+    ],
+    "status": "SUCCESS"
+  },
+  "timestamp": "2026-08-15T10:30:00+05:30"
+}
+```
+
+</StepperItem>
+
+</Stepper>
+
+## 6. Understanding the Response
+
+The API uses a consistent response structure so your application can handle successful and failed requests in the same way.
+
+The top-level response contains:
+
+```
+{
+  "success": true,
+  "message": "...",
+  "data": { },
+  "timestamp": "..."
+}
+```
+
+### Response Fields
+
+- `success` - Indicates whether the API request was successful.
+- `message` - A short message describing the result.
+- `data` - Contains the extracted product information.
+- `timestamp` - The time when the response was created.
+
+The actual product information is available inside `data`:
+
+```
+{
+  "link": "https://example.com/product",
+  "title": "Example Product",
+  "description": "Product description",
+  "currency": "USD",
+  "price": 99.99,
+  "images": [
+    "https://example.com/product.jpg"
+  ],
+  "status": "SUCCESS"
+}
+```
+
+### Product Fields
+
+- `link` - The original product URL.
+- `title` - Extracted product title.
+- `description` - Extracted product description.
+- `currency` - Currency detected from the webpage.
+- `price` - Extracted product price.
+- `images` - Product image URLs.
+- `status` - Indicates how complete the extraction was.
+
+The `status` can be:
+
+- `SUCCESS` - Product information was extracted successfully.
+- `PARTIAL` - Some product information is missing.
+- `FAILED` - Product extraction was unsuccessful.
+
+### Customizing the Status
+
+You can change the status rules to match your application by modifying:
+
+```
+/url2product/util/ExtractionStatusUtil.java
+```
+
+For example, you might consider an extraction successful when only the `title` and `price` are available:
+
+```
+if (title != null && price != null) {
+    return ExtractionStatus.SUCCESS;
+}
+```
+
+You can also add your own status rules or introduce new statuses if your application needs more detailed results.
+
+This gives your application a simple way to decide whether to use the returned product directly or handle missing information.
+
+## 7. Build Your Own API Around It
+
+You don't have to expose `url2product-ai` directly to your frontend.
+
+In a real application, you will usually want to put your own API layer in front of it. This gives you control over authentication, validation, rate limiting, response formats, and any application-specific logic.
+
+For example, you can create your own endpoint:
+
+```
+POST /api/products/extract
+```
+
+Then call the `ProductExtractionService` from your controller:
+
+```
+@RestController
+@RequestMapping("/api/products")
+@RequiredArgsConstructor
+public class ProductController {
+
+    private final ProductExtractionService productExtractionService;
+
+    @PostMapping("/extract")
+    public ProductDetailsResponse extract(
+            @RequestBody ProductExtractionRequest request) {
+
+        return productExtractionService.extract(request.url());
+    }
+}
+```
+
+Now your frontend only needs to communicate with your own API:
+
+```
+Frontend
+   ↓
+Your API
+   ↓
+url2product-ai service
+   ↓
+Product Details response
+```
+
+This approach is useful when you want to add your own business logic around product extraction.
+
+You can also transform the response into your own DTO instead of exposing the `url2product-ai` response directly.
+
+This keeps `url2product-ai` as an internal extraction component while your own API remains the public contract of your application.
+
+## 8. Customize Webpage Fetching
+
+By default, `url2product-ai` uses **Jsoup** to fetch the product webpage before processing it.
+
+The fetching logic is located at:
+
+```
+url2product-ai/src/main/java/com/dineth/url2product/service/WebPageFetcher.java
+```
+
+The default configuration includes:
+
+```
+TIMEOUT_MILLIS = 15_000
+MAX_BODY_SIZE = 10 * 1024 * 1024
+```
+
+You can change these values depending on your application.
+
+### Request Configuration
+
+The fetcher also sends headers such as:
+
+- `User-Agent` — Identifies the requesting client.
+- `Accept` — Specifies the content types we accept.
+- `Accept-Language` — Sets the preferred language.
+- `Accept-Encoding` — Controls response compression.
+- `Referer` — Provides the request source.
+
+You can customize the `USER_AGENT` if a website requires a specific browser signature:
+
+```
+private static final String USER_AGENT =
+        "Mozilla/5.0 ...";
+```
+
+You can also adjust the timeout and maximum response size:
+
+```
+private static final int TIMEOUT_MILLIS = 30_000;
+private static final int MAX_BODY_SIZE = 20 * 1024 * 1024;
+```
+
+The fetcher also follows redirects and checks HTTP errors before returning the webpage content.
+
+### Why You Might Customize This
+
+Different websites can behave differently when receiving automated requests. You may need to adjust:
+
+- Request timeout
+- Maximum page size
+- User agent
+- Request headers
+- Redirect behavior
+- Content-type handling
+- Error handling
+
+For example, if your application needs to support slower websites, increasing the timeout may help.
+
+If you need browser-level rendering for JavaScript-heavy websites, Jsoup alone may not be enough. In that case, you could replace `WebPageFetcher` with another implementation such as Playwright or Selenium while keeping the rest of the extraction flow unchanged.
+
+This separation makes the fetching layer easy to replace without changing the LLM extraction logic.
+
+## 9. Customize HTML Cleaning
+
+After fetching the webpage, `url2product-ai` uses **Jsoup** to clean the HTML and extract the useful information.
+
+The cleaning logic is located at:
+
+```
+url2product-ai/src/main/java/com/dineth/url2product/service/HtmlContentCleaner.java
+```
+
+The cleaner currently handles:
+
+- Removing unnecessary HTML elements
+- Extracting the page title
+- Extracting page text
+- Extracting product price
+- Extracting currency
+- Extracting product images
+- Extracting page metadata
+
+### Removing Unnecessary Content
+
+Elements such as scripts, styles, navigation, ads, and forms are removed before the content is processed.
+
+```
+script, style, noscript, iframe,
+svg, canvas, nav, footer, header,
+form, aside, .advertisement, .ads, .cookie
+```
+
+You can add or remove selectors here depending on the websites you want to support.
+
+### Price and Currency Extraction
+
+The cleaner also tries to detect price and currency directly from the webpage before sending the content to the LLM.
+
+For example, the price extractor checks common attributes such as:
+
+```
+[itemprop='price']
+[data-price]
+[data-testid*='price']
+[class*='current-price']
+[class*='sale-price']
+[class*='selling-price']
+```
+
+Currency is handled in a similar way:
+
+```
+[itemprop='priceCurrency']
+[data-currency]
+[data-price-currency]
+[data-testid*='currency']
+```
+
+### Supporting a Specific Website
+
+If you are integrating this into your own project and a specific website is not being detected correctly, inspect the website's HTML first.
+
+For example, if the price looks like:
+
+```
+<div class="product-price">
+    Rs. 25,000
+</div>
+```
+
+You can add its selector to the price extraction logic:
+
+```
+[class*='product-price']
+```
+
+You can also check the element's attributes and use those instead of relying only on class names.
+
+For example:
+
+```
+[data-testid='product-price']
+```
+
+Then add the selector to `extractPrice()`.
+
+The same approach can be used for currency, images, metadata, or any other information you want to extract.
+
+This makes the cleaner easy to extend when you need better support for a particular website.
+
+## 10. Customize LLM Extraction
+
+The LLM extraction layer is kept separate from the rest of the application, so you can easily change the prompt or even replace OpenAI with another LLM provider.
+
+The main files are:
+
+```
+/service/llm/ProductLlmExtractor.java
+/service/llm/OpenAiProductLlmExtractor.java
+/service/llm/ProductExtractionPrompt.java
+```
+
+<Stepper>
+
+<StepperItem title="Step 1: Understand the LLM Interface">
+
+`ProductLlmExtractor` defines the contract for product extraction:
+
+```
+public interface ProductLlmExtractor {
+
+    LlmProductDetails extract(ExtractedPageContent content);
+
+}
+```
+
+This keeps the extraction logic independent from the actual LLM provider.
+
+</StepperItem>
+
+<StepperItem title="Step 2: Customize the Prompt">
+
+`ProductExtractionPrompt` contains the system prompt and builds the user prompt sent to the LLM.
+
+If you want to change how the model extracts product information, this is the main place to customize.
+
+For example, you can change the prompt to:
+
+- Add extraction rules
+- Change how prices are handled
+- Add or remove product fields
+- Handle specific webpage formats
+- Prevent unwanted assumptions or hallucinations
+
+Simply update the prompt to match your application's requirements.
+
+</StepperItem>
+
+<StepperItem title="Step 3: OpenAI Implementation">
+
+`OpenAiProductLlmExtractor` implements `ProductLlmExtractor` and uses Spring AI's `ChatClient` to communicate with OpenAI.
+
+The flow is:
+
+```
+ExtractedPageContent
+        ↓
+ProductExtractionPrompt
+        ↓
+ChatClient
+        ↓
+LlmProductDetails
+```
+
+You normally don't need to change this class unless you want to customize the OpenAI implementation itself.
+
+</StepperItem>
+
+<StepperItem title="Step 4: Add Another LLM Provider">
+
+Because the extraction is defined by an interface, you can add another LLM provider without changing the rest of the extraction flow.
+
+Add the required dependency, create a new implementation of `ProductLlmExtractor`, and configure its required client or `ChatClient`.
+
+For example:
+
+```
+@Service
+public class OtherLlmProductExtractor
+        implements ProductLlmExtractor {
+
+    @Override
+    public LlmProductDetails extract(
+            ExtractedPageContent content) {
+
+        // Your LLM implementation
+
+    }
+}
+```
+
+Then update your Spring configuration to use the provider you want.
+
+The rest of the application can continue using `ProductLlmExtractor`, making the LLM provider easy to replace.
+
+</StepperItem>
+</Stepper>
+
+## 13. Customize Currency Conversion
+
+Currency conversion is handled separately from LLM extraction using the `CurrencyConverter` interface.
+
+<Stepper>
+
+<StepperItem title="Step 1: Choose or Add a Currency Provider">
+
+The default implementation uses **Frankfurter** and `RestClient` to fetch exchange rates.
+
+The provider can be replaced without changing the extraction flow.
+
+</StepperItem>
+
+<StepperItem title="Step 2: Implement CurrencyConverter">
+
+`CurrencyConverter` defines the conversion contract:
+
+```
+public interface CurrencyConverter {
+
+    BigDecimal convert(
+            BigDecimal amount,
+            String fromCurrency,
+            String toCurrency
+    );
+}
+```
+
+The current `FrankfurterCurrencyConverter` implements this interface.
+
+To use another exchange-rate API, create another implementation:
+
+```
+public class MyCurrencyConverter implements CurrencyConverter {
+    // your API implementation
+}
+```
+
+Then configure your new implementation as the active Spring bean.
+
+</StepperItem>
+
+<StepperItem title="Step 3: Change the Conversion Logic">
+
+Conversion happens after the LLM extracts the original price and currency.
+
+By default, non-USD prices are converted to USD:
+
+```
+if (price != null && currency != null && !currency.isBlank()) {
+
+    if (!"USD".equalsIgnoreCase(currency)) {
+        price = currencyConverter.convert(
+                price,
+                currency,
+                "USD"
+        );
+
+        currency = "USD";
+    }
+}
+```
+
+You can change this logic to:
+
+- Keep the original currency
+- Convert to another currency
+- Convert only for specific currencies
+- Disable conversion completely
+
+</StepperItem>
+
+</Stepper>
+
+## 14. Demo
+
+Here is a quick demo of `url2product-ai` in action:
+
+<Media
+  type="video"
+  src="https://ik.imagekit.io/dinimgbucket/bootarc/blog/b2-u2pai/url2product-ai-demo-v0-1.mp4?updatedAt=1786693975064"
+  alt="url2product-ai demo"
+/>
+
+## 15. Limitations
+
+`url2product-ai` depends on the target website and its HTML structure.
+
+Some websites may:
+
+- Block automated requests
+- Require JavaScript to load content
+- Use anti-bot protection
+- Require authentication
+- Hide product data behind client-side rendering
+
+LLM extraction can also return partial results when the webpage does not provide enough reliable information.
+
+Because of this, extraction is not guaranteed for every website.
+
+---
+
+## 16. Conclusion
+
+`url2product-ai` provides a simple way to add product extraction to a Spring Boot application without building a custom scraper for every website.
+
+The main components are also easy to customize, so you can change the webpage fetching, HTML cleaning, extraction prompt, LLM provider, status rules, or currency conversion based on your own requirements.
+
+Hopefully, this guide makes it easier to integrate and adapt `url2product-ai` to your project.
+
+If you have any questions, suggestions, or want to learn more about the project,
+feel free to reach out. [GitHub](https://github.com/DinethDilhara)
+
+<br />

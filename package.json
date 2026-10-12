@@ -1,0 +1,14 @@
+{
+  "name": "bootarc-open-docs",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Open-source documentation and learning content for BootArc.",
+  "scripts": {
+    "validate:mdx": "node .github/scripts/validate-mdx.mjs"
+  },
+  "type": "module",
+  "devDependencies": {
+    "@mdx-js/mdx": "3.1.1",
+    "gray-matter": "^4.0.3"
+  }
+}

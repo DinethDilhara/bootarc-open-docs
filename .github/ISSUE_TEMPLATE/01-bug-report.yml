@@ -1,0 +1,64 @@
+
+name: Documentation Bug Report
+description: Report incorrect, broken, or outdated BootArc content
+title: "[Bug]: "
+labels:
+  - bug
+  - documentation
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping improve BootArc!
+        Please provide enough detail to reproduce or verify the issue.
+
+  - type: input
+    id: page_url
+    attributes:
+      label: Affected page
+      description: Link to the BootArc article or documentation page
+      placeholder: https://bootarc.vercel.app/docs/...
+    validations:
+      required: true
+
+  - type: dropdown
+    id: issue_type
+    attributes:
+      label: Issue type
+      options:
+        - Incorrect technical explanation
+        - Broken link
+        - Code example does not work
+        - Outdated information
+        - Typo or formatting issue
+        - Missing information
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: What is wrong?
+      description: Clearly describe the issue you found
+      placeholder: Explain what is incorrect or broken...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected correction
+      description: What should the content say or do instead?
+      placeholder: Describe the expected result...
+    validations:
+      required: true
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence and references
+      description: Add error messages, code snippets, screenshots, or reference links
+      placeholder: Optional supporting information
+    validations:
+      required: false

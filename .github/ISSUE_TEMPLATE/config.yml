@@ -1,0 +1,6 @@
+blank_issues_enabled: false
+
+contact_links:
+  - name: Browse BootArc
+    url: https://bootarc.vercel.app/
+    about: Explore existing documentation and tutorials before submitting a request.

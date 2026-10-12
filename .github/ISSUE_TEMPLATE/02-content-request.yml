@@ -1,0 +1,72 @@
+
+name: Content & Feature Request
+description: Suggest a tutorial, topic, or documentation improvement
+title: "[Request]: "
+labels:
+  - enhancement
+  - content
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Have an idea that could make BootArc more useful?
+        Tell us what you would like to see and why it matters.
+
+  - type: dropdown
+    id: request_type
+    attributes:
+      label: Request type
+      options:
+        - New tutorial or article
+        - New documentation topic
+        - Improve existing content
+        - Add a code example or diagram
+        - Learning roadmap or resource
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: topic
+    attributes:
+      label: Proposed topic
+      description: Give your idea a clear, concise title
+      placeholder: e.g. Understanding distributed tracing
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem would this solve?
+      description: Explain what readers struggle with or what is missing
+      placeholder: Describe the learning gap or opportunity...
+    validations:
+      required: true
+
+  - type: textarea
+    id: details
+    attributes:
+      label: What should it cover?
+      description: Suggested concepts, examples, or desired outcomes
+      placeholder: Outline the content you would find useful...
+    validations:
+      required: false
+
+  - type: input
+    id: related_page
+    attributes:
+      label: Related BootArc page
+      description: Link to an existing page, if applicable
+      placeholder: https://bootarc.vercel.app/...
+    validations:
+      required: false
+
+  - type: textarea
+    id: references
+    attributes:
+      label: References and inspiration
+      description: Share useful articles, repositories, or examples
+      placeholder: Optional links and additional context
+    validations:
+      required: false

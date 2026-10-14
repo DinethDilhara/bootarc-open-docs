@@ -1,0 +1,468 @@
+---
+title: "herdr 101: Essentials for Getting Started with an Agent Aware Terminal Multiplexer"
+description: "Learn the concepts behind herdr, how it manages and monitors agent sessions, and how to get started with a modern alternative to traditional terminal multiplexers."
+date: 09-09-2026
+authors:
+  - avatar: "https://ik.imagekit.io/dinimgbucket/bootarc/blog/dineth.png"
+    handle: DinethDilhara
+    username: Dineth Dilhara
+    handleUrl: "https://github.com/DinethDilhara"
+cover: "https://ik.imagekit.io/dinimgbucket/bootarc/blog/b3-herdr101/herdr-101-thumb.jpeg"
+---
+
+
+# herdr 101: The Terminal Multiplexer Built for AI Coding Agents
+
+**herdr** is a terminal-native workspace manager designed specifically for running and monitoring multiple AI coding agents in parallel.  Think of it as tmux reimagined for the age of autonomous coding agents—it gives every agent its own real terminal pane, tracks whether each one is working, blocked, or idle, and keeps sessions alive even after you close the window.
+
+***
+
+## Introduction
+
+### What is herdr?
+
+herdr (pronounced "herder") is an open-source, Rust-based **agent multiplexer** that runs as a background server with attachable terminal clients.  Instead of treating each terminal window as an isolated, disposable process, herdr owns your terminal sessions persistently—similar to how tmux or screen work, but with built-in awareness of AI coding agents like Claude Code, Codex, Cursor CLI, GitHub Copilot CLI, and over twenty others.
+
+At its core, herdr provides:
+
+- **Persistent sessions** that survive terminal closes and reboots
+- **Agent-state tracking** showing working, blocked, idle, or completed status
+- **Mouse-native navigation** with clickable panes and automatic clipboard copying
+- **Agent orchestration API** allowing agents to control herdr itself and coordinate with each other
+
+### Why AI coding agents change terminal workflows
+
+Before AI coding agents, terminal multiplexers solved a simple problem: keep long-running processes alive and organize multiple shells.  With agents, the challenge shifts from *launching* processes to *knowing what needs your attention*. 
+
+When you're running five agents simultaneously—one refactoring code, another writing tests, a third reviewing PRs, and two more exploring different architectural approaches—the hard part isn't starting them.  It's answering: 
+
+- Which agent is actually making progress right now?
+- Which one is stuck waiting for my approval or input?
+- Which task is already done and can be closed?
+- How do I get Agent A to hand off results to Agent B without manual copy-paste?
+
+Traditional tools like tmux give you panes and tabs, but they're **agent-blind**—they can't tell you whether Claude Code is blocked on a question or if Codex has finished its task.  herdr was built to solve exactly this visibility and coordination problem.
+
+***
+
+## The Problem
+
+### Running multiple AI agents
+
+Modern development workflows increasingly involve **parallel agent execution**:
+
+- One agent writes new features while another maintains documentation
+- A builder agent implements code while a reviewer agent audits it
+- Multiple agents explore different solutions to the same problem simultaneously
+
+Each agent needs its own terminal session with full interactivity—scrolling through output, approving file changes, answering clarification questions.  Without a multiplexer, you end up with a chaotic mess of terminal windows, each running an agent, none of which you can easily monitor at a glance.
+
+### Managing sessions manually
+
+The manual approach quickly breaks down:
+
+- **Context switching overhead**: Constantly Alt+Tab between terminals to check progress
+- **Lost state**: Closing a terminal kills the agent and all its work
+- **No unified view**: No way to see all agents and their status in one place
+- **Fragmented workflow**: Agents can't easily communicate or coordinate
+
+### Knowing what needs your attention
+
+The most critical gap is **state visibility**.  With tmux, every pane looks the same—a blinking cursor could mean:
+
+- The agent is actively coding
+- It's waiting for you to approve a file change
+- It's stuck on an error you haven't noticed
+- It finished ten minutes ago and you forgot about it
+
+herdr solves this by **surfacing agent state directly in the UI**, so you know at a glance which panes need your attention.
+
+***
+
+## What Is a Terminal Multiplexer?
+
+### The basic concept
+
+A **terminal multiplexer** is a tool that lets you run multiple terminal sessions within a single window, with the ability to:
+
+- **Split** the screen into multiple panes (horizontal or vertical)
+- **Create tabs/windows** to organize related sessions
+- **Detach** from sessions without killing the underlying processes
+- **Reattach** later to resume exactly where you left off
+
+This is essential for long-running tasks, remote development, and managing multiple concurrent processes.
+
+### How tmux approaches it
+
+**tmux** (terminal multiplexer) is the gold standard in this space.  Its model:
+
+- **Server process** runs in the background, owning all sessions 
+- **Client** attaches to the server to render a session 
+- **Prefix key** (default `Ctrl+B`) triggers commands like split pane, new window, detach 
+- **Pure terminal focus**—tmux doesn't know or care what's running inside each pane
+
+tmux is powerful and flexible, but it's **process-agnostic**—it treats an AI agent the same as a `top` command or a shell prompt.
+
+### Where traditional multiplexers fall short for AI agents
+
+Traditional multiplexers weren't designed for **agent-aware workflows**:
+
+| Limitation | Impact on AI Agent Workflows |
+|------------|------------------------------|
+| **No state tracking** | Can't tell if an agent is working, blocked, or done |
+| **Keyboard-only navigation** | Mouse interactions require plugins or workarounds |
+| **No agent coordination** | Agents can't control the multiplexer or talk to each other |
+| **Manual session management** | No built-in concept of workspaces or agent fleets |
+| **No approval workflows** | Can't surface agent requests for human input in a structured way |
+
+herdr addresses each of these gaps by design.
+
+***
+
+## Introducing herdr
+
+### What makes herdr different
+
+herdr keeps the familiar multiplexer model (panes, tabs, detach/reattach) but adds **agent-first features**:
+
+- **Agent state detection**: Automatically recognizes ~21 coding agents and displays their status (working, blocked, idle, completed)
+- **Mouse-native experience**: Click to focus panes, select text with automatic clipboard copy, right-click context menus
+- **Sidebar workspace view**: Persistent navigation showing all spaces, agents, and their current state
+- **Socket API**: Agents can programmatically control herdr—split panes, start other agents, send prompts, wait for results
+- **Plugin system**: Extend panes and workflows with custom integrations
+
+### Agent-aware terminal sessions
+
+Unlike tmux, herdr **understands what's running inside each pane**.  It detects supported agents (Claude Code, Codex, Cursor, Copilot, OpenCode, Kimi Code CLI, Qwen Code, and more) and surfaces their state in real time.
+
+**State indicators** (shown in the sidebar):
+
+- 🟡 **Yellow**: Agent is actively working
+- 🔴 **Red**: Agent is blocked, waiting for approval or input
+- ⚫ **Black**: No agent running / idle
+- 🟢 **Green** (implied): Task completed
+
+This lets you instantly see which agents need your attention without cycling through tabs.
+
+### Mouse-native experience
+
+herdr embraces modern terminal UX:
+
+- **Click to focus** any pane (no need for `Ctrl+B` + arrow keys) 
+- **Select text with mouse** automatically copies to clipboard 
+- **Right-click context menu** for common actions (split pane, close pane, etc.) 
+- **Scrollable output** with mouse wheel support 
+
+This makes herdr feel more like a modern IDE terminal panel than a traditional multiplexer.
+
+### How herdr works internally
+
+herdr's architecture mirrors tmux but with agent-aware extensions:
+
+**Server-Client Model**:
+
+- **Background server** (`herdr-server`) owns all PTYs (pseudo-terminals) and agent processes 
+- **Client TUI** attaches to the server to render sessions 
+- **Detaching** closes the client but leaves the server and agents running 
+- **Reattaching** restores the exact layout and state 
+
+**Agent Detection**:
+
+- herdr monitors process trees and output patterns to identify supported agents 
+- Once detected, it tracks agent state via output parsing and socket communication 
+- Agents can register **skills** or **integrations** to expose richer state and capabilities
+
+**Socket API**:
+
+- Local JSON socket allows agents (or scripts) to:
+  - Create workspaces and panes 
+  - Start agents with specific prompts 
+  - Send commands between agents 
+  - Wait for completion and read results 
+
+This enables **agent orchestration** patterns like "builder creates a pane, starts a reviewer agent, sends it code, and waits for feedback."
+
+***
+
+## Core Concepts
+
+### Sessions
+
+A **session** in herdr is a persistent workspace that survives client disconnects.  Key properties: 
+
+- **Default session**: Running `herdr` from a project directory launches or attaches to your default session
+- **Named sessions**: Create multiple sessions for different projects or workflows
+- **Persistence**: Sessions remain alive across terminal closes, reboots (if server persists), and reattachments
+
+Sessions are the top-level container for all your agent work. 
+
+### Panes
+
+A **pane** is a split region within a session, each running its own shell or agent.  Operations: 
+
+- **Split right**: `Ctrl+B`, then `v` (or right-click → Split right) 
+- **Split down**: `Ctrl+B`, then `-` 
+- **Close pane**: Right-click → Close, or `Ctrl+B`, then `x` 
+- **Navigate**: Click with mouse, or `Ctrl+B` + arrow keys
+
+Each pane can host one AI coding agent.
+
+### Windows
+
+**Windows** (also called **tabs**) organize related panes within a session.  Think of them as:
+
+- **Window 1**: Feature development (builder + reviewer agents)
+- **Window 2**: Testing (test writer + test runner agents)
+- **Window 3**: Documentation (docs agent + linting agent)
+
+Navigate between windows with `Ctrl+B`, then `n` (next) or `p` (previous), or click the tab bar. 
+
+### AI agent monitoring
+
+herdr's killer feature is **real-time agent state monitoring**.
+
+#### Agent states / activity
+
+Supported agents report their state through:
+
+- **Output parsing**: herdr watches for patterns like "Waiting for approval" or "Task completed"
+- **Socket communication**: Agents can push state updates via the herdr socket API
+- **Process monitoring**: Detects when agent processes start, stop, or hang
+
+**State display**:
+
+- **Sidebar**: Shows all panes with color-coded status indicators
+- **Status bar**: Current pane's agent state and recent activity
+- **Notifications**: Visual or audible alerts when an agent blocks or completes
+
+This transforms the workflow from "Which terminal was I supposed to check?" to "The red pane needs me."
+
+***
+
+## Getting Started with herdr
+
+### Installation
+
+herdr is distributed as a **single Rust binary** and supports Windows, macOS, and Linux.
+
+**Windows (PowerShell)**:
+```powershell
+powershell -ExecutionPolicy Bypass -c 'irm https://herdr.dev/install.ps1 | iex'
+```
+
+
+**macOS / Linux**:
+```bash
+curl -fsSL https://herdr.dev/install.sh | sh
+```
+
+
+**Verify installation**:
+```bash
+herdr --version
+```
+
+Full documentation is at [herdr.dev/docs](https://herdr.dev/docs).
+
+### Creating your first session
+
+1. **Navigate to your project**:
+   ```bash
+   cd ~/projects/my-app
+   ```
+
+2. **Start herdr**:
+   ```bash
+   herdr
+   ```
+   This launches or attaches to your default session for this directory.
+
+3. **Explore the UI**:
+   - **Sidebar**: Lists all panes and their agent states
+   - **Main area**: Active pane with shell prompt
+   - **Status bar**: Current session, window, and pane info
+
+### Running an AI coding agent
+
+Inside a herdr pane, start any supported agent as you normally would:
+
+```bash
+# Claude Code
+claude
+
+# Codex
+codex
+
+# Cursor CLI
+cursor
+
+# GitHub Copilot CLI
+copilot
+
+# OpenCode
+opencode
+```
+
+
+herdr automatically detects the agent and begins tracking its state.  You'll see the pane's status indicator change from black (idle) to yellow (working) as the agent starts.
+
+### Managing multiple agents
+
+**Split a pane** to create space for another agent:
+
+- **Keyboard**: `Ctrl+B`, then `v` (split right) or `-` (split down)
+- **Mouse**: Right-click → Split right / Split down
+
+**Start a second agent** in the new pane:
+
+```bash
+# In the right pane
+codex
+```
+
+**Repeat** to add more agents.  You can now see all agents simultaneously, with their states visible in the sidebar.
+
+**Navigate between panes**:
+
+- **Click** with mouse (recommended)
+- **Keyboard**: `Ctrl+B`, then arrow keys
+
+***
+
+## A Practical Workflow
+
+Here's a realistic multi-agent workflow using herdr:
+
+### Running agents on different tasks
+
+**Scenario**: You're building a new API endpoint and want parallel progress on implementation, testing, and documentation.
+
+**Setup**:
+
+1. **Start herdr** in your project:
+   ```bash
+   cd ~/projects/api-service
+   herdr
+   ```
+
+2. **Split into three panes** (right twice):
+   - Pane 1 (left): Implementation
+   - Pane 2 (center): Testing
+   - Pane 3 (right): Documentation
+
+3. **Start agents**:
+   ```bash
+   # Pane 1
+   claude --prompt "Implement POST /users endpoint with validation"
+
+   # Pane 2
+   codex --prompt "Write unit tests for POST /users"
+
+   # Pane 3
+   opencode --prompt "Document the new endpoint in OpenAPI format"
+   ```
+
+### Monitoring their progress
+
+Watch the **sidebar** for state changes:
+
+- 🟡 **Pane 1 (Claude)**: Working—generating implementation code
+- 🟡 **Pane 2 (Codex)**: Working—writing tests
+- ⚫ **Pane 3 (OpenCode)**: Idle—waiting for context from Pane 1
+
+When **Pane 1 completes** (turns green or black), you can:
+
+- Review the implementation
+- Unblock Pane 3 to start documentation
+
+When **Pane 2 blocks** (turns red), it's waiting for your approval on a test change.  Click to focus, review, and approve.
+
+### Switching between sessions
+
+**Detach** from herdr without killing agents:
+
+- **Keyboard**: `Ctrl+B`, then `q`
+- **Close terminal window** (agents keep running)
+
+**Reattach** later:
+
+```bash
+cd ~/projects/api-service
+herdr
+```
+
+Your layout, agent states, and work are exactly as you left them.
+
+**Multiple sessions**: If you're working on different projects, create named sessions:
+
+```bash
+# Session for API project
+herdr workspace create --cwd ~/projects/api-service --label api
+
+# Session for frontend project
+herdr workspace create --cwd ~/projects/web-app --label frontend
+
+# Attach to a specific session
+herdr attach api
+```
+
+
+### Handling completed agents
+
+When an agent finishes its task:
+
+1. **Review output** in the pane (scroll with mouse wheel)
+2. **Copy results** by selecting text (auto-copies to clipboard)
+3. **Close the pane**:
+   - Right-click → Close
+   - Or `Ctrl+B`, then `x`
+4. **Reallocate space** by splitting remaining panes or starting new agents
+
+**Agent coordination**: Advanced workflows use the socket API to automate handoffs:
+
+```bash
+# Agent A (builder) creates a pane and starts Agent B (reviewer)
+herdr pane split --direction right
+herdr agent start reviewer --kind codex --pane "$new_pane" --prompt "Review the code in pane 1"
+```
+
+
+This enables patterns like **builder-reviewer loops** where agents coordinate without manual intervention.
+
+***
+
+## Conclusion
+
+### Recap
+
+herdr reimagines the terminal multiplexer for the AI agent era:
+
+- **Agent-aware**: Tracks state (working, blocked, idle, done) for 21+ coding agents
+- **Persistent**: Sessions survive terminal closes and reboots
+- **Mouse-native**: Click to navigate, select, and manage panes
+- **Orchestratable**: Agents can control herdr via socket API for automated workflows
+
+It solves the core problem of **parallel agent management**: knowing what needs your attention without losing context or killing long-running tasks.
+
+### Where herdr is heading
+
+herdr is still **pre-1.0**, with active development focused on:
+
+- **More agent integrations**: Expanding the list of supported agents beyond the current ~21
+- **Richer state tracking**: Deeper integration with agent SDKs for finer-grained status
+- **Plugin ecosystem**: Community-built extensions for custom panes and workflows
+- **Remote access**: Securely attach to herdr sessions from other machines
+- **Improved performance**: Addressing early feedback about latency in large sessions
+
+The vision is a **terminal-native agent runtime** where developers can run, monitor, and coordinate fleets of AI coding agents as naturally as they run shell commands today.
+
+***
+
+**Resources**:
+
+- **Official site**: [herdr.dev](https://herdr.dev)
+- **Documentation**: [herdr.dev/docs](https://herdr.dev/docs)
+- **GitHub**: [github.com/herdrdev/herdr](https://github.com/herdrdev/herdr)
+- **Supported agents**: Full list at [herdr.dev/docs/supported-agents](https://herdr.dev/docs/supported-agents)
+
+If you're running multiple AI coding agents and find yourself lost in a sea of terminal windows, herdr is worth trying—it's tmux for the agent age.

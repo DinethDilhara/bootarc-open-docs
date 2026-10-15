@@ -1,0 +1,226 @@
+---
+title: "Doodling with Game Trees: A Intro to Minimax and Alpha Beta Pruning"
+description: "Learn how AI thinks ahead in games, how Minimax finds the best moves, and how Alpha-Beta Pruning makes search faster with examples and game trees."
+date: 14-10-2026
+authors:
+  - avatar: "https://ik.imagekit.io/dinimgbucket/bootarc/blog/dineth.png"
+    handle: DinethDilhara
+    username: Dineth Dilhara
+    handleUrl: "https://github.com/DinethDilhara"
+cover: "https://ik.imagekit.io/dinimgbucket/bootarc/blog/b4-minmax-algo/b4-thumb01.jpeg"
+---
+
+## Background
+Not all games are random. In deterministic games there are no random events. So in those games, the outcome depends only on the players moves. Because of that, AI can actually map out possible futures. That's where adversarial search comes in. Instead of searching for a path, like in a maze, the AI is searching through a tree of moves and countermoves.
+That's what makes adversarial search useful, because it tries to pick the best move for one player, assuming the opponent always plays optimally.
+
+## Why Do We Need Game Search?
+
+In a maze, you just need to find a path to the exit. But in games like Tic-Tac-Toe and Chess, your opponent is also trying to win.
+
+Every move you make can lead to different outcomes depending on how your opponent responds. So, instead of thinking only about your next move, AI needs to explore possible moves and their responses.
+
+This is where **adversarial search** comes in. It helps AI think ahead and choose moves while considering what the opponent might do next.
+
+<Diagram name="adversarial-search-doodling" zoom="20%" editable={false} />
+
+## 2. Meet Minimax: Choosing the Best Move
+
+### What Is Minimax?
+
+Minimax is a backtracking-based algorithm used in AI and game theory to find the best move in a competitive game. It explores possible future outcomes and assumes both players make their best moves.
+
+It is commonly used in two-player, turn-based, zero-sum games like Tic-Tac-Toe and Chess, where one player's advantage comes at the other's expense.
+
+### MAX vs. MIN
+
+Minimax works with two types of players:
+
+- **MAX (Maximizer):** Tries to get the highest possible score.
+- **MIN (Minimizer):** Tries to get the lowest possible score for MAX.
+
+### Key Concepts
+
+- **Game State:** The current situation of the game, such as the positions of X and O on a Tic-Tac-Toe board.
+- **Game Tree:** A tree of possible game states, connected by the moves players can make.
+- **Utility Value:** A numerical score assigned to an outcome. For example, `+1` means MAX wins, `0` means a draw, and `-1` means MAX loses.
+- **Heuristic Evaluation:** An estimate of how good a game state is when the algorithm cannot explore all the way to the end of the game.
+
+### How Does Minimax Work?
+
+Minimax builds a game tree and explores possible moves and responses until it reaches the end of the game or a chosen search depth.
+
+It then works backward through the tree, a process called **backtracking**, passing values from the leaf nodes toward the root. MAX chooses the highest value, while MIN chooses the lowest.
+
+### A Simple Example
+
+Imagine MAX has two possible moves:
+
+- **Move A:** Can lead to a win (`+1`) or a loss (`-1`).
+- **Move B:** Can lead to a draw (`0`) or a win (`+1`).
+
+Since MIN also plays optimally, MAX considers the worst outcome of each move.
+
+- Move A gets `-1`, because MIN chooses the lower score.
+- Move B gets `0`, because MIN chooses the lower score.
+
+MAX chooses Move B because `0` is better than `-1`.
+
+### Why Does Minimax Work?
+
+Minimax considers the opponent's best possible responses rather than assuming everything will go its way. By evaluating possible outcomes and working backward through the game tree, it helps AI choose the best move when both players play optimally.
+
+## 3. The Problem with Minimax
+
+Minimax works well, but there's one problem: it can take a lot of time to explore every possible move.
+
+Each move creates more possible moves, and the deeper we search, the bigger the game tree becomes. The number of possible moves at each step is called the **branching factor**, while the number of moves we look ahead is the **search depth**.
+
+As these grow, the number of possibilities increases rapidly, making games like Chess expensive to search.
+
+So, here's the question: **Can we skip some moves without changing the final decision?**
+
+## 4. Alpha-Beta Pruning: Searching Smarter
+
+Alpha-Beta Pruning is an optimization of Minimax that helps AI search faster by skipping moves that cannot affect the final decision.
+
+It works alongside Minimax, keeping track of two values:
+
+- **Alpha (α):** The best score MAX can guarantee so far.
+- **Beta (β):** The best score MIN can guarantee so far.
+
+When **α ≥ β**, the algorithm can stop exploring that branch because it cannot change the final decision. This is called *pruning*.
+
+### Mathematical Recurrence Formulation
+
+The exact minimax value *V(s)* being computed is defined by:
+
+<Equation type="minimax-recurrence" tag="(1.1)" />
+
+The search maintains the invariant interval [α, β]:
+
+- **α** is the maximum value that the **MAX** player can guarantee so far along the search path.
+- **β** is the minimum value that the **MIN** player can guarantee so far along the search path.
+- A sub-tree is pruned as soon as **β ≤ α** (i.e., *v'* ≥ β at a MAX node, or *v'* ≤ α at a MIN node).
+
+### Algorithmic Pseudocode
+
+The pruning search is carried out by two mutually recursive functions, `Max-Value` and `Min-Value`:
+
+```python:alpha_beta_pruning.py
+function Max-Value(s, α, β):
+    if terminal(s):
+        return U(s)
+    v = -∞
+    for each c in next-states(s):
+        v' = Min-Value(c, α, β)
+        if v' > v:
+            v = v'
+        if v' ≥ β:
+            return v           # β cutoff: MIN will never allow this path
+        if v' > α:
+            α = v'
+    return v
+
+
+function Min-Value(s, α, β):
+    if terminal(s):
+        return U(s)
+    v = +∞
+    for each c in next-states(s):
+        v' = Max-Value(c, α, β)
+        if v' < v:
+            v = v'
+        if v' ≤ α:
+            return v           # α cutoff: MAX will never allow this path
+        if v' < β:
+            β = v'
+    return v
+```
+
+### Step-by-Step Breakdown
+
+#### **Max-Value(s, α, β)**
+
+<Stepper>
+  <StepperItem title="Base Case">
+    If state *s* is terminal, return its utility value *U(s)* immediately.
+  </StepperItem>
+
+  <StepperItem title="Initialization">
+    Set initial best value *v* = -∞. MAX begins by assuming the worst possible score.
+  </StepperItem>
+
+  <StepperItem title="Branch Exploration & Pruning">
+    For each successor state *c* ∈ next-states(*s*):
+
+    <Steps>
+      <li><strong>Compute child value:</strong> Recursively call <code>v' = Min-Value(c, α, β)</code>.</li>
+      <li><strong>Update current maximum:</strong> If <code>v' &gt; v</code>, set <code>v = v'</code>.</li>
+      <li><strong>Pruning rule (β-cutoff):</strong> If <code>v' ≥ β</code>, return <code>v</code> immediately (MIN already has a better or equal alternative earlier in the tree).</li>
+      <li><strong>Update lower bound:</strong> If <code>v' &gt; α</code>, set <code>α = v'</code>.</li>
+    </Steps>
+  </StepperItem>
+
+  <StepperItem title="Return Evaluated Value">
+    Return the evaluated state value *v*.
+  </StepperItem>
+</Stepper>
+
+#### **Min-Value(s, α, β)**
+
+<Stepper>
+  <StepperItem title="Base Case">
+    If state *s* is terminal, return its utility value *U(s)* immediately.
+  </StepperItem>
+
+  <StepperItem title="Initialization">
+    Set initial best value *v* = +∞. MIN begins by assuming the highest possible score for MAX.
+  </StepperItem>
+
+  <StepperItem title="Branch Exploration & Pruning">
+    For each successor state *c* ∈ next-states(*s*):
+
+    <Steps>
+      <li><strong>Compute child value:</strong> Recursively call <code>v' = Max-Value(c, α, β)</code>.</li>
+      <li><strong>Update current minimum:</strong> If <code>v' &lt; v</code>, set <code>v = v'</code>.</li>
+      <li><strong>Pruning rule (α-cutoff):</strong> If <code>v' ≤ α</code>, return <code>v</code> immediately (MAX already has a better or equal alternative earlier in the tree).</li>
+      <li><strong>Update upper bound:</strong> If <code>v' &lt; β</code>, set <code>β = v'</code>.</li>
+    </Steps>
+  </StepperItem>
+
+  <StepperItem title="Return Evaluated Value">
+    Return the evaluated state value *v*.
+  </StepperItem>
+</Stepper>
+
+### Interactive Game Tree Simulation
+
+By skipping unnecessary work, Alpha-Beta Pruning can explore fewer nodes while producing the same result as Minimax. It doesn't make different decisions; it just avoids checking possibilities that don't matter.
+
+Use the interactive simulation below to observe alpha-beta updates step by step, or switch to **Pruning Cutoff Practice** mode to test your intuition by identifying pruned subtrees before revealing the solution:
+
+<AlphaBetaTree />
+
+## 5. Minimax vs. Alpha-Beta Pruning
+
+Both algorithms find the same best move, assuming optimal play. The difference is how much work they do.
+
+Minimax explores every possible move up to the search depth. Alpha-Beta Pruning skips branches that cannot affect the final decision.
+
+The number of nodes explored depends on **move ordering**. If promising moves are explored first, Alpha-Beta Pruning can skip more branches.
+
+In the best case, Alpha-Beta Pruning can significantly reduce the search effort. In the worst case, it may still explore almost as many nodes as Minimax.
+
+---
+
+## 6. Putting It All Together
+
+Adversarial search helps AI make decisions when an opponent is trying to win. Minimax explores possible moves and chooses the best one, assuming both players play optimally. Alpha-Beta Pruning makes this process more efficient by skipping branches that cannot change the result.
+
+**Key takeaways:**
+
+- **Adversarial search:** Think ahead while considering an opponent.
+- **Minimax:** Choose the best move assuming optimal play.
+- **Alpha-Beta Pruning:** Reach the same decision while exploring fewer possibilities.
+
